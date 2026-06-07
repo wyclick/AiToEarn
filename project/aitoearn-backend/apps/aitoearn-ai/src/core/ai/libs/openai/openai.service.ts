@@ -55,6 +55,10 @@ export class OpenaiService {
     return this.openAI.chat.completions.create(options)
   }
 
+  async createRawCompletion(options: OpenAI.Chat.ChatCompletionCreateParamsNonStreaming) {
+    return this.openAI.chat.completions.create(options)
+  }
+
   async createChatCompletion(options: Partial<OpenAIChatInput> & {
     model: string
     messages: BaseMessage[]

@@ -82,6 +82,9 @@ export function LowBalanceAlertProvider() {
    * 检查是否应该显示余额不足提示
    */
   const checkShouldShowAlert = (): boolean => {
+    // 本地部署：永久禁用余额不足弹窗
+    return false
+
     // 未登录不提示
     if (!token) {
       return false

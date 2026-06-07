@@ -83,6 +83,7 @@ const PromptSchema = z.union([
 
 // 允许的模型列表
 export const AllowedModelSchema = z.enum([
+  'deepseek-ai/DeepSeek-V3.2',
   'claude-opus-4-6',
   'claude-haiku-4-5-20251001-thinking',
   'claude-opus-4-5-20251101-thinking',
@@ -95,7 +96,7 @@ export const AllowedModelSchema = z.enum([
   'claude-opus-4-6',
   'claude-opus-4-6-thinking',
 ])
-  .default('claude-opus-4-6')
+  .default('claude-sonnet-4-5-20250929')
 
 // 创建内容生成任务 DTO
 export const CreateContentGenerationTaskSchema = z.object({

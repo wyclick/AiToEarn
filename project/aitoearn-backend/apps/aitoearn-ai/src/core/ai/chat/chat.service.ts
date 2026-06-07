@@ -167,18 +167,8 @@ export class ChatService {
    * @param pricing 价格配置
    */
   private async checkUserBalance(userId: string, userType: UserType, pricing: ChatPricing): Promise<void> {
-    if (userType === UserType.User) {
-      const balance = await this.creditsHelper.getBalance(userId)
-      if (balance < 0) {
-        throw new AppException(ResponseCode.UserCreditsInsufficient)
-      }
-      if (isFlatPricing(pricing)) {
-        const price = Number(pricing.price)
-        if (balance < price) {
-          throw new AppException(ResponseCode.UserCreditsInsufficient)
-        }
-      }
-    }
+    // 余额检查已禁用（本地部署绕过）
+    return
   }
 
   /**

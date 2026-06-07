@@ -694,15 +694,8 @@ export class AgentRuntimeService {
     mcpServers: Record<string, McpServerConfig>
     maxBudgetUsd?: number
   }> {
+    // 余额检查已禁用（本地部署绕过）
     let maxBudgetUsd: number | undefined
-    if (userType === UserType.User) {
-      const balance = await this.creditsHelper.getBalance(userId)
-      if (balance <= 0) {
-        throw new AppException(ResponseCode.UserCreditsInsufficient)
-      }
-      maxBudgetUsd = balance / 100
-      this.logger.debug({ userId, balance, maxBudgetUsd }, 'User credits available')
-    }
 
     let task
     let originalTask
@@ -802,15 +795,16 @@ export class AgentRuntimeService {
       if ('total_cost_usd' in chunk) {
         const points = (chunk.total_cost_usd || 0) * 100
 
-        if (userType === UserType.User) {
-          await this.creditsHelper.deductCredits({
-            userId,
-            amount: points,
-            type: CreditsType.AiService,
-            description: 'claude',
-            metadata: { taskId, modelUsage },
-          })
-        }
+        // 余额检查已禁用（本地部署绕过）：注释掉扣积分逻辑
+        // if (userType === UserType.User) {
+        //   await this.creditsHelper.deductCredits({
+        //     userId,
+        //     amount: points,
+        //     type: CreditsType.AiService,
+        //     description: 'claude',
+        //     metadata: { taskId, modelUsage },
+        //   })
+        // }
 
         await this.aiLogRepo.create({
           userId,
@@ -870,7 +864,7 @@ export class AgentRuntimeService {
           void this.contentGenerateRepository.updateStatus(taskId, ContentGenerationTaskStatus.Error)
 
           const errorCodeMap: Record<string, ResponseCode> = {
-            error_max_budget_usd: ResponseCode.UserCreditsInsufficient,
+            error_max_budget_usd: ResponseCode.AgentTaskFailed, // 本地部署：禁用预算超限的积分不足报错
             error_during_execution: ResponseCode.AgentTaskFailed,
             error_max_turns: ResponseCode.AgentTaskFailed,
             error_max_structured_output_retries: ResponseCode.AgentTaskFailed,

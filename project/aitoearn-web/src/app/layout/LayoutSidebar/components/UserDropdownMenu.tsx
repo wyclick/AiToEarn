@@ -265,32 +265,9 @@ export function UserDropdownMenu({
     return <Skeleton className="mt-2 h-9 w-full rounded-md" />
   }
 
-  // 未登录状态显示登录按钮
+  // 未登录状态不显示
   if (!token) {
-    const handleLogin = () => navigateToLogin()
-
-    if (collapsed) {
-      return (
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button onClick={handleLogin} size="icon" className="h-9 w-9" data-testid="sidebar-login-btn">
-                <span className="text-sm font-semibold">In</span>
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="right">
-              <p>{t('login')}</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-      )
-    }
-
-    return (
-      <Button onClick={handleLogin} className="mt-2 w-full" data-testid="sidebar-login-btn">
-        {t('login')}
-      </Button>
-    )
+    return null
   }
 
   // 已登录状态显示下拉菜单

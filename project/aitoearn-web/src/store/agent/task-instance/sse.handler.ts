@@ -306,28 +306,14 @@ async function handleErrorMessage(
   const errorMessage
     = typeof msg.message === 'string' ? msg.message : (msg.message as any)?.message || 'Unknown error'
 
+  // 积分不足（本地部署禁用弹窗和卡片）
   if (errorCode === 12001) {
-    // 先保存当前步骤内容，防止正在流式传输的文字消息丢失
+    // 保存当前步骤内容
     const streamingText = ctx.getStreamingText()
     const currentStepWorkflow = ctx.getCurrentStepWorkflow()
     if (streamingText.trim() || currentStepWorkflow.length > 0) {
       saveCurrentStepToMessage(ctx)
     }
-
-    // 积分不足：在聊天中显示卡片，不跳转
-    const insufficientMsg: IDisplayMessage = {
-      id: `assistant-insufficient-${Date.now()}`,
-      role: 'assistant',
-      content: '',
-      status: 'done',
-      createdAt: Date.now(),
-      actions: [
-        {
-          type: 'insufficientCredits',
-        },
-      ],
-    }
-    ctx.addMessage(insufficientMsg)
   }
   else {
     // 其他错误：创建错误消息

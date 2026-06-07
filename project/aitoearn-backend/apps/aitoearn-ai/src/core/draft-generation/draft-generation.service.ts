@@ -28,7 +28,9 @@ import { AgentService } from '../agent/agent.service'
 import { MediaMcp } from '../agent/mcp/media.mcp'
 import { UtilMcp } from '../agent/mcp/util.mcp'
 import { VideoUtilsMcp } from '../agent/mcp/video-utils.mcp'
+import OpenAI from 'openai'
 import { ImageService } from '../ai/image/image.service'
+import { OpenaiService } from '../ai/libs/openai/openai.service'
 import { calculatePricingPoints, ChatPricing } from '../ai/pricing/pricing-calculator'
 import { VideoService } from '../ai/video/video.service'
 import { getCompatibleAccountTypes } from '../material-adaptation/material-adaptation.constants'
@@ -103,6 +105,7 @@ export class DraftGenerationService implements OnModuleDestroy {
     private readonly videoMetadataService: VideoMetadataService,
     private readonly imageService: ImageService,
     private readonly mediaRepository: MediaRepository,
+    private readonly openaiService: OpenaiService,
   ) { }
 
   /** 优雅关机：等待所有正在运行的生成任务完成后再销毁模块 */
@@ -814,23 +817,32 @@ Return the result as JSON.`
         'ImageText: Starting generation',
       )
 
-      // 仅 draft 类型需要 Gemini 规划（生成标题/描述/话题/图片 prompts）
+      // 仅 draft 类型需要规划（生成标题/描述/话题/图片 prompts）
       let plan: ImageTextPlanResult | undefined
       let imagePrompts: string[]
 
       if (draftType === 'draft') {
-        const { plan: geminiPlan, points: planPoints } = await this.planImageTextWithGemini(
-          userId,
-          userType,
-          referenceImageUrls,
-          options.prompt,
-          options.imageCount,
-        )
-        plan = geminiPlan
+        const useOpenAI = this.isOpenAIImageModel(options.imageModel)
+        const { plan: generatedPlan, points: planPoints } = useOpenAI
+          ? await this.planImageTextWithOpenAI(
+              userId,
+              userType,
+              referenceImageUrls,
+              options.prompt,
+              options.imageCount,
+            )
+          : await this.planImageTextWithGemini(
+              userId,
+              userType,
+              referenceImageUrls,
+              options.prompt,
+              options.imageCount,
+            )
+        plan = generatedPlan
         imagePrompts = plan.imagePrompts
         consumedPoints += planPoints
         this.logger.log(
-          { aiLogId, title: plan.title, imagePromptsCount: plan.imagePrompts.length, planPoints },
+          { aiLogId, title: plan.title, imagePromptsCount: plan.imagePrompts.length, planPoints, provider: useOpenAI ? 'openai' : 'gemini' },
           'ImageText: Planning completed',
         )
       }
@@ -1042,6 +1054,180 @@ Return the result as JSON.`
   }
 
   /**
+   * 判断是否为 OpenAI 兼容的图片模型
+   */
+  private isOpenAIImageModel(model: string): boolean {
+    return model.startsWith('gpt-image-')
+  }
+
+  /**
+   * 获取 OpenAI 兼容的文字模型名称
+   */
+  private getOpenAITextModel(): string {
+    const chatModels = config.ai.models.chat
+    const openaiModel = chatModels.find(m => m.name.startsWith('gpt-'))
+    return openaiModel?.name || 'gpt-4o-mini'
+  }
+
+  /**
+   * 图文规划（OpenAI兼容版）：调用 OpenAI 兼容 API 生成元数据 + 每张图片的 prompt
+   */
+  private async planImageTextWithOpenAI(
+    userId: string,
+    userType: UserType,
+    imageUrls: string[],
+    userPrompt: string,
+    imageCount: number,
+  ): Promise<{ plan: ImageTextPlanResult, points: number }> {
+    const modelName = this.getOpenAITextModel()
+    const startedAt = new Date()
+
+    const prompt = `You are a social media content generation assistant.
+## Task
+Analyze the user's prompt and reference images below, then generate post metadata and image generation prompts.
+
+## User Instructions (HIGHEST PRIORITY)
+${userPrompt}
+
+## Reference Images
+${imageUrls.map((url, i) => `- Image ${i + 1}: ${url}`).join('\n') || 'No reference images provided.'}
+
+## Instructions
+
+Generate metadata and ${imageCount} image prompts for a social media image-text post:
+- **title**: Catchy title under 30 characters, in the language matching the user's prompt
+- **description**: Engaging description with call-to-action, under 2200 characters, in the language matching the user's prompt
+- **topics**: 3-5 relevant hashtags (without # prefix)
+- **imagePrompts**: Exactly ${imageCount} detailed image generation prompts in English. Each prompt should:
+  - Be self-contained and descriptive (the image generator has no context of other images)
+  - Describe visual style, composition, colors, and mood
+  - Be suitable for AI image generation (100-500 characters each)
+  - Together form a coherent visual story for the post
+  - **IMPORTANT**: NEVER depict children, minors, or anyone appearing under 18. If the user's prompt mentions minors, replace them with adults in the image prompts.
+
+Return the result as JSON.`
+
+    const messageContent: Array<OpenAI.Chat.ChatCompletionContentPart> = []
+
+    for (const url of imageUrls) {
+      const fullUrl = FileUtil.buildUrl(url)
+      const { base64, mimeType } = await this.fetchImageAsBase64(fullUrl)
+      messageContent.push({
+        type: 'image_url',
+        image_url: { url: `data:${mimeType};base64,${base64}` },
+      })
+    }
+    messageContent.push({ type: 'text', text: prompt })
+
+    const response = await this.openaiService.createRawCompletion({
+      model: modelName,
+      messages: [{ role: 'user', content: messageContent }],
+      response_format: {
+        type: 'json_schema',
+        json_schema: {
+          name: 'image_text_plan',
+          strict: true,
+          schema: {
+            type: 'object',
+            properties: {
+              title: { type: 'string', maxLength: 200 },
+              description: { type: 'string', maxLength: 2200 },
+              topics: { type: 'array', items: { type: 'string' }, maxItems: 5 },
+              imagePrompts: { type: 'array', items: { type: 'string', maxLength: 1000 } },
+            },
+            required: ['title', 'description', 'topics', 'imagePrompts'],
+            additionalProperties: false,
+          },
+        },
+      },
+      temperature: 1.2,
+    })
+
+    const choice = response.choices?.[0]
+    if (!choice?.message?.content) {
+      throw new Error('ImageText: No response from OpenAI planning step')
+    }
+
+    const parsed = z.safeParse(ImageTextPlanResultSchema, JSON.parse(choice.message.content))
+    if (!parsed.success) {
+      throw new Error(`ImageText: Invalid plan result: ${z.prettifyError(parsed.error)}`)
+    }
+
+    const chatModel = config.ai.models.chat.find(m => m.name === modelName)
+    const usage = response.usage
+    let consumedPoints = 0
+    if (chatModel && usage) {
+      const pricing = chatModel.pricing as ChatPricing
+      consumedPoints = calculatePricingPoints(pricing, { input_tokens: usage.prompt_tokens, output_tokens: usage.completion_tokens })
+      await this.aiLogRepository.create({
+        userId,
+        userType,
+        type: AiLogType.Agent,
+        model: modelName,
+        channel: AiLogChannel.NewApi,
+        startedAt,
+        duration: Date.now() - startedAt.getTime(),
+        points: consumedPoints,
+        request: { imageCount: imageUrls.length },
+        response: parsed.data,
+        status: AiLogStatus.Success,
+      })
+    }
+
+    this.logger.log({ plan: parsed.data }, 'ImageText: Plan generated (OpenAI)')
+    return { plan: parsed.data, points: consumedPoints }
+  }
+
+  /**
+   * 使用 OpenAI 兼容模型批量生成图片
+   */
+  private async generateImagesWithOpenAI(
+    userId: string,
+    model: string,
+    imagePrompts: string[],
+    imageSize?: string,
+  ): Promise<{ urls: string[], points: number }> {
+    const urls: string[] = []
+    let totalPoints = 0
+
+    for (const [index, prompt] of imagePrompts.entries()) {
+      this.logger.log(
+        { model, promptIndex: index, promptLength: prompt.length, imageSize },
+        'ImageText: Generating image with OpenAI',
+      )
+
+      const result = await retry(
+        () => this.openaiService.createImageGeneration({
+          model,
+          prompt,
+          n: 1,
+          size: (imageSize as '1024x1024' | '1536x1024' | '1024x1536') || '1024x1024',
+          response_format: 'url',
+        }),
+        {
+          maxRetries: 3,
+          delayMs: 1000,
+          onRetry: (error, attempt) => {
+            this.logger.warn(
+              { promptIndex: index, attempt, error: error.message },
+              'ImageText: OpenAI image generation failed, retrying',
+            )
+          },
+        },
+      )
+
+      for (const image of result.data || []) {
+        if (image.url) {
+          const uploadedUrl = await this.imageService['uploadImageToS3'](image.url, userId, `ai/images/${model}`)
+          urls.push(uploadedUrl)
+        }
+      }
+    }
+
+    return { urls, points: totalPoints }
+  }
+
+  /**
    * 根据模型类型批量生成图片
    */
   private async generateImages(
@@ -1053,6 +1239,9 @@ Return the result as JSON.`
     aspectRatio?: string,
     imageSize?: string,
   ): Promise<{ urls: string[], points: number }> {
+    if (this.isOpenAIImageModel(imageModel)) {
+      return this.generateImagesWithOpenAI(userId, imageModel, imagePrompts, imageSize)
+    }
     return this.generateImagesWithGemini(userId, userType, imageModel, imagePrompts, referenceImageUrls, aspectRatio, imageSize)
   }
 

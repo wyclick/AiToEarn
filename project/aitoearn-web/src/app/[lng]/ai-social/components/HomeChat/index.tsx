@@ -256,13 +256,6 @@ export const HomeChat = forwardRef<IHomeChatRef, IHomeChatProps>(
         return
       }
 
-      // 余额不足检查 - 阈值 50（美分）与 LowBalanceAlertProvider 中的 BALANCE_THRESHOLD 一致
-      const creditsBalance = useUserStore.getState().creditsBalance
-      if (creditsBalance < 50) {
-        useAccountStore.getState().setLowBalanceAlertOpen(true)
-        return
-      }
-
       // 执行发送逻辑
       doSend()
     }, [token, doSend, inputValue, defaultPrompt, medias, lng])

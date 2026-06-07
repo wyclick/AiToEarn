@@ -120,7 +120,7 @@ module.exports = {
       keyPairs: parseGeminiKeyPairs(),
       location: GEMINI_LOCATION || 'us-central1',
       apiKey: GEMINI_API_KEY,
-      baseUrl: GEMINI_BASE_URL,
+      baseUrl: GEMINI_BASE_URL || 'https://generativelanguage.googleapis.com',
     },
     aideo: {
       vCreative: {
@@ -178,6 +178,20 @@ module.exports = {
             tiers: [
               {
                 input: { text: '0', image: '0', video: '0', audio: '0' },
+                output: { text: '0' },
+              },
+            ],
+          },
+        },
+        {
+          name: 'deepseek-ai/DeepSeek-V3',
+          description: 'DeepSeek V3 (SiliconFlow)',
+          inputModalities: ['text'],
+          outputModalities: ['text'],
+          pricing: {
+            tiers: [
+              {
+                input: { text: '0' },
                 output: { text: '0' },
               },
             ],
@@ -278,6 +292,14 @@ module.exports = {
             styles: [],
             pricing: '0',
           },
+          {
+            name: 'Qwen/Qwen-Image',
+            description: 'Qwen Image (SiliconFlow)',
+            sizes: ['1024x1024', '1280x720', '720x1280', '768x1024', '1024x768'],
+            qualities: [],
+            styles: [],
+            pricing: '0',
+          },
         ],
         edit: [
           {
@@ -338,6 +360,17 @@ module.exports = {
     draftGeneration: {
       imageModels: [
         {
+          model: 'Qwen/Qwen-Image',
+          displayName: 'Qwen Image',
+          supportedAspectRatios: ['1:1', '2:3', '3:2', '3:4', '4:3', '4:5', '5:4', '9:16', '16:9'],
+          maxInputImages: 1,
+          pricing: [
+            { resolution: '1K', pricePerImage: 0 },
+            { resolution: '2K', pricePerImage: 0 },
+            { resolution: '4K', pricePerImage: 0 },
+          ],
+        },
+        {
           model: 'gemini-3.1-flash-image-preview',
           displayName: 'NanoBanana 2',
           supportedAspectRatios: ['1:1', '2:3', '3:2', '3:4', '4:3', '4:5', '5:4', '9:16', '16:9'],
@@ -363,7 +396,7 @@ module.exports = {
     },
   },
   agent: {
-    baseUrl: `${OPENAI_BASE_URL}/messages`,
+    baseUrl: OPENAI_BASE_URL,
     apiKey: OPENAI_API_KEY,
   },
 }

@@ -802,17 +802,7 @@ const AiBatchGenerateBar = memo(({ groupId, onGenerated, className }: AiBatchGen
     ]
 
     if (contentType === 'image_text') {
-      // 图文模式积分验证
-      const currentPricing = imagePricing.find(p => p.resolution === imageSize)
-      const pricePerImage = currentPricing?.pricePerImage ?? 0
-      const totalCredits = Math.ceil(pricePerImage * imageCount * quantity * 100) / 100
-      const creditsBalance = useUserStore.getState().creditsBalance
-      if (creditsBalance < totalCredits) {
-        toast.error(t('detail.insufficientBalance', { total: totalCredits, balance: creditsBalance }))
-        useAccountStore.getState().setLowBalanceAlertOpen(true)
-        return
-      }
-
+      // 图文模式
       const success = await createImageTextBatchGeneration(
         quantity,
         imageModel,
@@ -831,15 +821,6 @@ const AiBatchGenerateBar = memo(({ groupId, onGenerated, className }: AiBatchGen
       }
     }
     else {
-      // 视频模式积分验证（使用 API 驱动的查表积分）
-      const totalCredits = videoCredits
-      const creditsBalance = useUserStore.getState().creditsBalance
-      if (creditsBalance < totalCredits) {
-        toast.error(t('detail.insufficientBalance', { total: totalCredits, balance: creditsBalance }))
-        useAccountStore.getState().setLowBalanceAlertOpen(true)
-        return
-      }
-
       const videoUrls = localVideos.filter(v => v.url).map(v => v.url)
 
       const success = await createBatchGeneration(

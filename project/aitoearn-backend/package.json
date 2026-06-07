@@ -12,6 +12,7 @@
   "dependencies": {
     "apify-client": "^2.22.2",
     "commander": "^14.0.0",
+    "execa": "^9.6.1",
     "reflect-metadata": "^0.2.2",
     "tslib": "^2.3.0",
     "zod": "^4.3.5"

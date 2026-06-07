@@ -111,7 +111,7 @@ services:
 
   aitoearn-ai:
     image: aitoearn/aitoearn-ai:latest
-    pull_policy: always
+    pull_policy: if_not_present
     container_name: aitoearn-ai
     restart: unless-stopped
     depends_on:
@@ -121,6 +121,9 @@ services:
         condition: service_healthy
     volumes:
       - ./project/aitoearn-backend/apps/aitoearn-ai/config/config.js:/app/config.js:ro
+      - ./project/aitoearn-backend/docker-overrides/apps/aitoearn-ai/src/core/agent/agent.dto.js:/app/apps/aitoearn-ai/src/core/agent/agent.dto.js:ro
+      - ./project/aitoearn-backend/docker-overrides/apps/aitoearn-ai/src/core/agent/services/agent-runtime.service.js:/app/apps/aitoearn-ai/src/core/agent/services/agent-runtime.service.js:ro
+      - ./project/aitoearn-backend/docker-overrides/apps/aitoearn-ai/src/core/agent/claude-code-router/claude-code-router.service.js:/app/apps/aitoearn-ai/src/core/agent/claude-code-router/claude-code-router.service.js:ro
     networks:
       - aitoearn-network
     environment:
@@ -145,8 +148,8 @@ services:
       ASSETS_CONFIG: '{"provider":"s3","region":"us-east-1","bucketName":"aitoearn","endpoint":"http://rustfs.local:9000","publicEndpoint":"http://127.0.0.1:9000","cdnEndpoint":"http://127.0.0.1:8080/oss","accessKeyId":"rustfsadmin","secretAccessKey":"rustfsadmin","forcePathStyle":true}'
 
       # AI Services
-      OPENAI_API_KEY: sk-placeholder
-      OPENAI_BASE_URL: https://api.openai.com/v1
+      OPENAI_API_KEY: sk-jadbzpotapmznlnexfzkqwxyytcndvgqoszjxesexzfvprwx
+      OPENAI_BASE_URL: https://api.siliconflow.cn/v1
       ANTHROPIC_API_KEY: sk-placeholder
       ANTHROPIC_BASE_URL: https://api.anthropic.com
       VOLCENGINE_API_KEY: ""
@@ -154,7 +157,7 @@ services:
       VOLCENGINE_SECRET_ACCESS_KEY: ""
       VOLCENGINE_VOD_SPACE_NAME: ""
       GROK_API_KEY: ""
-      GEMINI_API_KEY: ""
+      GEMINI_API_KEY: "AIzaSyBWR476F9kxedvTjU05LBBcXwz-whZvGO4"
       GEMINI_BASE_URL: ""
       GEMINI_KEY_PAIRS: '[]'
       GEMINI_LOCATION: us-central1
@@ -167,7 +170,7 @@ services:
 
   aitoearn-server:
     image: aitoearn/aitoearn-server:latest
-    pull_policy: always
+    pull_policy: if_not_present
     container_name: aitoearn-server
     restart: unless-stopped
     depends_on:

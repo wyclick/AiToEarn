@@ -225,9 +225,7 @@ export function ActionCard({ action, className }: IActionCardProps) {
     const platform = action.platform || ''
 
     switch (action.type) {
-      case 'insufficientCredits':
-        useAccountStore.getState().setLowBalanceAlertOpen(true)
-        return
+      // case 'insufficientCredits': // 本地部署禁用余额不足弹窗
       case 'createChannel':
         // 未登录时跳转登录页
         if (!token) {

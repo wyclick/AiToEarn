@@ -50,9 +50,5 @@ export function MobileUserSection({
     )
   }
 
-  return (
-    <Button onClick={handleLogin} className="w-full cursor-pointer" data-testid="mobile-login-btn">
-      {t('login')}
-    </Button>
-  )
+  return null
 }

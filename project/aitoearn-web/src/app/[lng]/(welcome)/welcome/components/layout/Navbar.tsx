@@ -120,20 +120,6 @@ export function Navbar() {
 
           {/* 右侧按钮 */}
           <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => navigateToLogin()}
-              className="hidden cursor-pointer px-4 py-2 text-sm font-medium text-foreground/80 transition-colors hover:text-foreground md:inline-flex"
-            >
-              {t('navbar.login')}
-            </button>
-            <button
-              type="button"
-              onClick={() => navigateToLogin()}
-              className="inline-flex cursor-pointer items-center rounded-lg bg-foreground px-4 py-2 text-sm font-medium text-background transition-colors hover:bg-foreground/90"
-            >
-              {t('navbar.getDemo')}
-            </button>
             <MenuButton isOpen={isMenuOpen} onClick={() => setIsMenuOpen(!isMenuOpen)} />
           </div>
         </div>
@@ -144,16 +130,7 @@ export function Navbar() {
             {navigation.map((item, index) => (
               <NavItemComponent key={index} item={item} t={t} />
             ))}
-            <button
-              type="button"
-              onClick={() => {
-                setIsMenuOpen(false)
-                navigateToLogin()
-              }}
-              className="cursor-pointer px-3 py-2 text-left text-sm font-medium text-foreground/80 transition-colors hover:text-foreground"
-            >
-              {t('navbar.login')}
-            </button>
+
           </div>
         )}
       </nav>

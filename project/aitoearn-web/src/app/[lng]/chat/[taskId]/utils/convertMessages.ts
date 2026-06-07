@@ -250,18 +250,11 @@ export function convertMessages(messages: TaskMessage[]): IDisplayMessage[] {
         lastAssistantMsgIndex = result.newAssistantMsgIndex
       }
     }
+    // 积分不足（本地部署禁用弹窗和卡片）
     else if (msg.type === 'error') {
       if (msg.code === 12001) {
-        // 积分不足：创建 insufficientCredits action 卡片
+        // 保存当前步骤内容
         saveStepsToMessage()
-        displayMessages.push({
-          id: `error-${index}`,
-          role: 'assistant',
-          content: '',
-          status: 'done',
-          actions: [{ type: 'insufficientCredits' }],
-        })
-        lastAssistantMsgIndex = displayMessages.length - 1
       }
     }
   })

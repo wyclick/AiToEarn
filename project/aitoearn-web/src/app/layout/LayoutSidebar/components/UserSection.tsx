@@ -77,26 +77,5 @@ export function UserSection({ collapsed, onLogin, onOpenSettings }: UserSectionP
     return <UserAvatar collapsed={collapsed} onOpenSettings={onOpenSettings} />
   }
 
-  if (collapsed) {
-    return (
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button onClick={onLogin} size="icon" className="h-9 w-9">
-              <span className="text-sm font-semibold">In</span>
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side="right">
-            <p>{t('login')}</p>
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
-    )
-  }
-
-  return (
-    <Button onClick={onLogin} className="mt-1 w-full">
-      {t('login')}
-    </Button>
-  )
+  return null
 }

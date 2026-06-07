@@ -43,7 +43,7 @@ export class GeminiService {
 
     this.genAiClient = new GoogleGenAI({
       apiKey: config.apiKey,
-      httpOptions: { baseUrl },
+      ...(baseUrl ? { httpOptions: { baseUrl } } : {}),
     })
   }
 

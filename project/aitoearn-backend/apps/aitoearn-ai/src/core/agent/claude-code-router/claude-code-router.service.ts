@@ -91,30 +91,20 @@ export class ClaudeCodeRouterService implements OnModuleInit, OnModuleDestroy {
       Providers: [
         {
           name: 'new',
-          api_base_url: routerConfig.baseUrl,
+          api_base_url: routerConfig.baseUrl.replace(/\/v1\/?$/, '') + '/v1/chat/completions',
           api_key: routerConfig.apiKey,
           models: [
-            'claude-opus-4-6',
-            'claude-haiku-4-5-20251001-thinking',
-            'claude-opus-4-5-20251101-thinking',
-            'claude-opus-4-5-20251101',
-            'claude-sonnet-4-5-20250929-thinking',
-            'claude-haiku-4-5-20251001',
-            'claude-opus-4-1-20250805',
-            'claude-opus-4-1-20250805-thinking',
-            'claude-sonnet-4-5-20250929',
-            'claude-opus-4-6',
-            'claude-opus-4-6-thinking',
+            'deepseek-ai/DeepSeek-V3.2',
           ],
           transformer: {
             use: [
-              'Anthropic',
+              'OpenAI',
             ],
           },
         },
       ],
       Router: {
-        default: 'new,claude-opus-4-6',
+        default: 'new,claude-sonnet-4-5-20250929',
         background: 'new,claude-haiku-4-5-20251001',
         think: 'new,claude-opus-4-6',
       },

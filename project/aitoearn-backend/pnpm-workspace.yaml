@@ -24,3 +24,16 @@ onlyBuiltDependencies:
 peerDependencyRules:
   ignoreMissing:
     - axios
+
+allowBuilds:
+  '@alicloud/openapi-core': set this to true or false
+  '@nestjs/core': set this to true or false
+  '@scarf/scarf': set this to true or false
+  esbuild: true
+  git-commit-msg-linter: set this to true or false
+  msgpackr-extract: true
+  nx: true
+  protobufjs: true
+  sharp: true
+  simple-git-hooks: set this to true or false
+  unrs-resolver: set this to true or false
